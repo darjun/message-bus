@@ -14,14 +14,14 @@ func Example() {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	_ = bus.Subscribe("topic", func(v bool) {
+	bus.Subscribe("topic", func(v interface{}) {
 		defer wg.Done()
-		fmt.Println("s1", v)
+		fmt.Println("s1", v.(bool))
 	})
 
-	_ = bus.Subscribe("topic", func(v bool) {
+	bus.Subscribe("topic", func(v interface{}) {
 		defer wg.Done()
-		fmt.Println("s2", v)
+		fmt.Println("s2", v.(bool))
 	})
 
 	// Publish block only when the buffer of one of the subscribers is full.
@@ -43,13 +43,20 @@ func Example_second() {
 
 	bus := messagebus.New(queueSize)
 
+	type Arg struct {
+		i   int
+		out chan<- int
+	}
 	for i := 0; i < subscribersAmount; i++ {
-		_ = bus.Subscribe("topic", func(i int, out chan<- int) { out <- i })
+		bus.Subscribe("topic", func(arg interface{}) {
+			a := arg.(*Arg)
+			a.out <- a.i
+		})
 	}
 
 	go func() {
 		for n := 0; n < queueSize; n++ {
-			bus.Publish("topic", n, ch)
+			bus.Publish("topic", &Arg{n, ch})
 		}
 	}()
 

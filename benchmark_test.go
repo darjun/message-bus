@@ -12,7 +12,7 @@ func BenchmarkPublish(b *testing.B) {
 	var wg sync.WaitGroup
 	wg.Add(b.N)
 
-	_ = bus.Subscribe("topic", func() {
+	bus.Subscribe("topic", func(interface{}) {
 		wg.Done()
 	})
 
@@ -20,7 +20,7 @@ func BenchmarkPublish(b *testing.B) {
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			bus.Publish("topic")
+			bus.Publish("topic", nil)
 		}
 	})
 
@@ -34,7 +34,7 @@ func BenchmarkSubscribe(b *testing.B) {
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = bus.Subscribe("topic", func() {})
+			bus.Subscribe("topic", func(interface{}) {})
 		}
 	})
 }
@@ -48,7 +48,7 @@ func benchmark(b *testing.B, subscribersCount, topicsCount int) {
 
 	for i := 0; i < topicsCount; i++ {
 		for j := 0; j < subscribersCount; j++ {
-			_ = bus.Subscribe(strconv.Itoa(i), func() {
+			bus.Subscribe(strconv.Itoa(i), func(interface{}) {
 				wg.Done()
 			})
 		}
@@ -58,7 +58,7 @@ func benchmark(b *testing.B, subscribersCount, topicsCount int) {
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			bus.Publish(strconv.Itoa(topicsCount - 1))
+			bus.Publish(strconv.Itoa(topicsCount - 1), nil)
 		}
 	})
 
